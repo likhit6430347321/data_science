@@ -1,14 +1,12 @@
-# Data Science Bootcamp 7 
+Data Analytics
 
-All of my data science projects in the bootcamp, consisting of 10 sprints as follow:
+All of my projects related to Data Analytics using skills and knowledges listed below
 - Google Sheets
 - SQL
 - R
-- Data Transformation in R
-- Data Visualisation in R
+- Data Transformation and Visualisation in R
 - Essential Statistics for Data Analysts
 - Machine Learning for Data Analysts
-- Python
 - Python for Data Analyst
 - Dashboard
 
