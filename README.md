@@ -1,4 +1,4 @@
-Data Analytics
+## Data Analytics
 
 All of my projects related to Data Analytics using skills and knowledges listed below
 - Google Sheets
