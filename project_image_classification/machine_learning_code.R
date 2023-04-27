@@ -63,6 +63,8 @@ model_function <- function(learning_rate = 0.001,
                            dropoutrate = 0.2, n_dense = 1024) {
   k_clear_session()
   
+  
+## Examine properties of the model  
   model <- keras_model_sequential() %>%
     model_base %>%
     layer_global_average_pooling_2d() %>%
@@ -80,6 +82,7 @@ model_function <- function(learning_rate = 0.001,
 
 model <- model_function()
 
+# 7. Training the model
 batch_size <- 32
 epochs <- 6
 
@@ -91,6 +94,7 @@ hist <- model %>%
                 validation_steps = validation_images$n %/% batch_size,
                 verbose = 2)
 
+# 8. Evaluating Model
 path_test <- "test"
 
 test_data_gen <- image_data_generator(rescale = 1/250)
@@ -107,6 +111,7 @@ model %>%
   evaluate_generator(test_images,
                      steps = test_images$n)
 
+## Manual test
 manual_test_image <- image_load("/Users/slick/Documents/DATA/archive/images/manual_test_images/sample5.jpg",
                                 target_size = target_size)
 
