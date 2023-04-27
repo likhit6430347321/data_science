@@ -45,7 +45,6 @@ validation_images <- flow_images_from_directory(path_train,
 ## check that train_images are working properly
 table(train_images$classes)
 
-plot(as.raster(train_images[[3]][[1]][21,,,]))
 
 # 5. Build the model
 
@@ -92,5 +91,31 @@ hist <- model %>%
                 validation_steps = validation_images$n %/% batch_size,
                 verbose = 2)
 
+path_test <- "test"
 
-    
+test_data_gen <- image_data_generator(rescale = 1/250)
+
+test_images <- flow_images_from_directory(path_test,
+                                          test_data_gen,
+                                          target_size = target_size,
+                                          class_mode = "categorical",
+                                          classes = label_list,
+                                          shuffle = FALSE,
+                                          seed = 2023)
+
+model %>%
+  evaluate_generator(test_images,
+                     steps = test_images$n)
+
+manual_test_image <- image_load("/Users/slick/Documents/DATA/archive/images/manual_test_images/sample5.jpg",
+                                target_size = target_size)
+
+x <- image_to_array(manual_test_image)
+x <- array_reshape(x, c(1, dim(x)))
+x <- x/255
+
+pred <- model %>%
+  predict(x)
+pred <- data.frame("Cat" = label_list, "Probability" = t(pred))
+pred <- pred[order(pred$Probability, decreasing = TRUE), ][1:5, ]
+pred$Probability <- paste(format(100*pred$Probability, 2), "%")
