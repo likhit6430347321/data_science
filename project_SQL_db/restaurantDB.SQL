@@ -170,14 +170,14 @@ SELECT *
 FROM employees
 WHERE salary >= 50000;
 
--- Invoices (SUM)
+-- Invoices 
 SELECT orders.order_id, SUM(orders.quantity) as number_of_orders, SUM(menu.menu_price) as total_fee, orders.date
 FROM orders, menu
 WHERE orders.menu_id = menu.menu_id
 GROUP BY orders.order_id;
 
 
--- The most popular menu (SUM, MAX, SUBQUERY)
+-- The most popular menu 
 SELECT *
 FROM menu
 WHERE menu_id IN (SELECT menu_id
@@ -189,7 +189,7 @@ WHERE menu_id IN (SELECT menu_id
                                           FROM orders
                                           GROUP BY menu_id) ));
 
--- Discount price for members (WITH)
+-- Discount price for members 
 WITH SUB AS (
   SELECT orders.order_id, SUM(menu.menu_price) as normal_fee
   FROM orders, menu
