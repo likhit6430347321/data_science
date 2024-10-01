@@ -1,0 +1,391 @@
+---
+title: "Introduction to R - Part 2"
+output:
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: inline
+---
+
+## ==== Factor ====
+
+The term **factor** refers to a statistical data type used to store categorical variables. The difference between a **categorical variable** and a **continuous variable** is that a categorical variable can belong to a limited number of categories. A continuous variable, on the other hand, can correspond to an infinite number of values.
+
+It is important that R knows whether it is dealing with a continuous or a categorical variable, as the statistical models you will develop in the future treat both types differently.
+
+A good example of a categorical variable is **sex**. In many circumstances you can limit the sex categories to "Male" or "Female". (Sometimes you may need different categories. For example, you may need to consider chromosomal variation, hermaphroditic animals, or different cultural norms, but you will always have a finite number of categories.)
+
+To create factors in R, you make use of the function `factor()`. First thing that you have to do is create a vector that contains all the observations that belong to a limited number of categories. For example, `sex_vector` contains the sex of 5 different individuals:
+
+`sex_vector <- c("Male","Female","Female","Male","Male")`
+
+It is clear that there are two categories, or in R-terms **'factor levels'**, i.e. "Male" and "Female".
+
+The function `factor()` will encode the vector as a factor.
+
+There are two types of categorical variables: a **nominal categorical variable** and an **ordinal categorical variable**.
+
+A nominal variable is a categorical variable without an implied order. This means that it is impossible to say that 'one is worth more than the other'. For example, think of the categorical variable `animals_vector` with the categories `"Elephant"`, `"Giraffe"`, `"Donkey"` and `"Horse"`. Here, it is impossible to say that one stands above or below the other.
+
+In contrast, ordinal variables do have a natural ordering. Consider for example the categorical variable `temperature_vector` with the categories: `"Low"`, `"Medium"` and `"High"`. Here it is obvious that `"Medium"` stands above `"Low"`, and `"High"` stands above `"Medium"`.
+
+### Factor levels
+
+When you first get a dataset, you will often notice that it contains factors with specific factor levels. However, sometimes you will want to change the names of these levels for clarity or other reasons. R allows you to do this with the function `levels()`:
+
+`levels(factor_vector) <- c("name1", "name2",...)`
+
+A good illustration is the raw data that is provided to you by a survey. A common question for every questionnaire is the sex of the respondent. Here, for simplicity, just two categories were recorded, `"M"` and `"F"`. (You usually need more categories for survey data; either way, you use a factor to store the categorical data.)
+
+`survey_vector <- c("M", "F", "F", "M", "M")`
+
+Recording the sex with the abbreviations `"M"` and `"F"` can be convenient if you are collecting data with pen and paper, but it can introduce confusion when analyzing the data. At that point, you will often want to change the factor levels to `"Male"` and `"Female"` instead of `"M"` and `"F"` for clarity.
+
+**Watch out:** the order with which you assign the levels is important. If you type `levels(factor_survey_vector)`, you'll see that it outputs `[1] "F" "M"`. If you don't specify the levels of the factor when creating the vector, R will automatically assign them alphabetically. To correctly map `"F"` to `"Female"` and `"M"` to `"Male"`, the levels should be set to `c("Female", "Male")`, in this order.
+
+### Summarizing a factor
+
+The function `summary()` gives you a quick overview of the contents of a variable:
+
+`summary(my_var)`
+
+Going back to our survey, you would like to know how many "Male" responses you have in your study, and how many "Female" responses. The summary() function gives you the answer to this question.
+
+```{r Factor}
+# Convert the character vector sex_vector to a factor with factor() and assign the result to factor_sex_vector
+sex_vector <- c("Male","Female","Female","Male","Male")
+factor_sex_vector <- factor(sex_vector)
+# Print out factor_sex_vector and assert that R prints out the factor levels below the actual values.
+factor_sex_vector
+# Animals
+animals_vector <- c("Elephant", "Giraffe", "Donkey", "Horse")
+factor_animals_vector <- factor(animals_vector)
+factor_animals_vector
+# Temperature
+temperature_vector <- c("High", "Low", "High","Low", "Medium")
+factor_temperature_vector <- factor(temperature_vector, order = TRUE, levels = c("Low", "Medium", "High"))
+factor_temperature_vector
+# Build factor_survey_vector
+survey_vector <- c("M", "F", "F", "M", "M")
+
+
+# Change the factor levels of factor_survey_vector to c("Female", "Male"). Mind the order of the vector elements here.
+factor_survey_vector <- factor(factor_sex_vector, levels = c("Male","Female"))
+
+# Print out factor_survey_vector
+factor_survey_vector
+
+# Ask a summary() of the survey_vector and factor_survey_vector. Interpret the results of both vectors. Are they both equally useful in this case?
+summary(survey_vector)
+summary(factor_survey_vector)
+
+
+```
+
+## ==== Ordered factors ====
+
+Sometimes you will deal with factors that do have a natural ordering between its categories. If this is the case, we have to make sure that we pass this information to R.
+
+Let us say that you are leading a research team of five data analysts and that you want to evaluate their performance. To do this, you track their speed, evaluate each analyst as `"slow"`, `"medium"` or `"fast"`, and save the results in `speed_vector`.
+
+As a first step, assign speed_vector a vector with 5 entries, one for each analyst. Each entry should be either "slow", "medium", or "fast". Use the list below:
+
+-   Analyst 1 is medium,
+
+-   Analyst 2 is slow,
+
+-   Analyst 3 is slow,
+
+-   Analyst 4 is medium, and
+
+-   Analyst 5 is fast.
+
+`speed_vector` should be converted to an **ordinal factor** since its categories have a natural ordering. By default, the function `factor()` transforms `speed_vector` into an **unordered factor**. To create an ordered factor, you have to add two additional arguments: `ordered` and `levels`.
+
+`factor(some_vector, ordered = TRUE, levels = c("lev1", "lev2" ...))`
+
+By setting the argument `ordered` to `TRUE` in the function `factor()`, you indicate that the factor is ordered. With the argument `levels` you give the values of the factor in the correct order.
+
+### Comparing ordered factors
+
+Having a bad day at work, 'data analyst number two' enters your office and starts complaining that 'data analyst number five' is slowing down the entire project. Since you know that 'data analyst number two' has the reputation of being a smarty-pants, you first decide to check if his statement is true.
+
+The fact that `factor_speed_vector` is now ordered enables us to compare different elements (the data analysts in this case). You can simply do this by using the well-known operators.
+
+```{r Ordered factors}
+# Create speed_vector
+speed_vector <- c("medium","slow","slow","medium","fast")
+# From speed_vector, create an ordered factor vector: factor_speed_vector. Set ordered to TRUE, and set levels to c("slow", "medium", "fast").
+factor_speed_vector <- factor(speed_vector, levels = c("slow","medium","fast"))
+
+# Print and summarize factor_speed_vector
+factor_speed_vector
+
+# Check if da2 (the factor value for the second data analyst) is greater than da5 (the factor value for the fifth data analyst)
+
+```
+
+## ==== Data frame ====
+
+### What's a data frame?
+
+For matrices, all the elements that you put in a matrix should be of the same type. Back then, your dataset on Star Wars only contained numeric elements.
+
+When doing a market research survey, however, you often have questions such as:
+
+-   'Are you married?' or 'yes/no' questions (logical)
+
+-   'How old are you?' (numeric)
+
+-   'What is your opinion on this product?' or other 'open-ended' questions (character)
+
+The output, namely the respondents' answers to the questions formulated above, is a dataset of different data types. You will often find yourself working with datasets that contain different data types instead of only one.
+
+A **data frame** has the variables of a dataset as columns and the observations as rows.
+
+### Quick, have a look at your dataset
+
+Wow, that is a lot of cars!
+
+Working with large datasets is not uncommon in data analysis. When you work with (extremely) large datasets and data frames, your first task as a data analyst is to develop a clear understanding of its structure and main elements. Therefore, it is often useful to show only a small part of the entire dataset.
+
+So how to do this in R? Well, the function `head()` enables you to show the first observations of a data frame. Similarly, the function `tail()` prints out the last observations in your dataset.
+
+Both `head()` and `tail()` print a top line called the 'header', which contains the names of the different variables in your dataset.
+
+Another method that is often used to get a rapid overview of your data is the function `str()`. The function `str()` shows you the structure of your dataset. Applying the `str()` function will often be the first thing that you do when receiving a new dataset or data frame. It is a great way to get more insight in your dataset before diving into the real analysis.
+
+```{r Data frame}
+# Print out built-in R data frame
+mtcars
+# Call head() on the mtcars dataset to have a look at the header and the first observations.
+head(mtcars)
+# Investigate the structure of mtcars. Make sure that you see the same numbers, variables and data types as mentioned above.
+
+```
+
+## ==== Creating a data frame ====
+
+As a first goal, you want to construct a data frame that describes the main characteristics of eight planets in our solar system. According to your good friend Buzz, the main features of a planet are:
+
+-   The type of planet (Terrestrial or Gas Giant).
+
+-   The planet's diameter relative to the diameter of the Earth.
+
+-   The planet's rotation across the sun relative to that of the Earth.
+
+-   If the planet has rings or not (TRUE or FALSE).
+
+After doing some high-quality research on **Wikipedia**, you feel confident enough to create the necessary vectors: `name`, `type`, `diameter`, `rotation` and `rings`; these vectors have already been coded up in the editor. The first element in each of these vectors correspond to the first observation.
+
+You construct a data frame with the `data.frame()` function. As arguments, you pass the vectors from before: they will become the different columns of your data frame. Because every column has the same length, the vectors you pass should also have the same length. But don't forget that it is possible (and likely) that they contain different types of data.
+
+### Selection of data frame elements
+
+Similar to vectors and matrices, you select elements from a data frame with the help of square brackets `[ ]`. By using a comma, you can indicate what to select from the rows and the columns respectively. For example:
+
+-   `my_df[1,2]` selects the value at the first row and second column in `my_df`.
+
+-   `my_df[1:3,2:4]` selects rows 1, 2, 3 and columns 2, 3, 4 in `my_df`.
+
+Sometimes you want to select all elements of a row or column. For example, `my_df[1, ]` selects all elements of the first row. Let us now apply this technique on planets_df!
+
+Instead of using `numerics` to select elements of a data frame, you can also use the variable names to select columns of a data frame.
+
+Suppose you want to select the first three elements of the `type` column. One way to do this is
+
+`planets_df[1:3,2]`
+
+A possible disadvantage of this approach is that you have to know (or look up) the column number of type, which gets hard if you have a lot of variables. It is often easier to just make use of the variable name:
+
+`planets_df[1:3,"type"]`
+
+If your columns have names, you can use the `$` sign as a short-cut to select an entire column, namely one specific variable from a data frame.
+
+If you type `rings_vector` in the console, you get:
+
+`[1] FALSE FALSE FALSE FALSE  TRUE  TRUE  TRUE  TRUE`
+
+This means that the first four observations (or planets) do not have a ring (`FALSE`), but the other four do (`TRUE`). However, you do not get a nice overview of the names of these planets, their diameter, etc. Let's try to use rings_vector to select the data for the four planets with rings.
+
+```{r Creating a data frame}
+# Definition of vectors
+name <- c("Mercury", "Venus", "Earth", 
+          "Mars", "Jupiter", "Saturn", 
+          "Uranus", "Neptune")
+type <- c("Terrestrial planet", 
+          "Terrestrial planet", 
+          "Terrestrial planet", 
+          "Terrestrial planet", "Gas giant", 
+          "Gas giant", "Gas giant", "Gas giant")
+diameter <- c(0.382, 0.949, 1, 0.532, 
+              11.209, 9.449, 4.007, 3.883)
+rotation <- c(58.64, -243.02, 1, 1.03, 
+              0.41, 0.43, -0.72, 0.67)
+rings <- c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE)
+# Use the function data.frame() to construct a data frame. Pass the vectors name, type, diameter, rotation and rings as arguments to data.frame(), in this order. Call the resulting data frame planets_df.
+planets_df <- data.frame(name,type,diameter,rotation,rings)
+planets_df
+
+# Use str() to investigate the structure of the new planets_df variable.
+str(planets_df)
+
+# From planets_df, select the diameter of Mercury (the value at the first row and the third column). 
+planets_df[1,3]
+
+# From planets_df, select all data on Mars (the fourth row).
+planets_df[,4]
+
+# Select and print out the first 5 values in the "diameter" column of planets_df.
+planets_df[1:5,3]
+
+# Use the $ sign to select the rings variable from planets_df. Store the vector that results as rings_vector.
+rings_vector <- planets_df$rings
+rings_vector
+# Select the name column of all planets that have rings.
+planets_df$name[rings == TRUE]
+
+# Select all columns for planets with rings
+planets_df[rings_vector,]
+```
+
+## ==== Subset and sorting ====
+
+### Subset
+
+Now, let us move up one level and use the function `subset()`. You should see the `subset()` function as a short-cut to do exactly the same as what you did in the previous exercises.
+
+`subset(my_df, subset = some_condition)`
+
+The first argument of `subset()` specifies the dataset for which you want a subset. By adding the second argument, you give R the necessary information and conditions to select the correct subset.
+
+The code below will give the exact same result as you got in the previous exercise, but this time, you didn't need the rings_vector!
+
+`subset(planets_df, rings)`
+
+### Sorting
+
+Making and creating rankings is one of mankind's favorite affairs. In data analysis you can sort your data according to a certain variable in the dataset. In R, this is done with the help of the function `order()`.
+
+`order()` is a function that gives you the ranked position of each element when it is applied on a variable, such as a vector for example:
+
+`a <- c(100, 10, 1000)`
+
+`order(a)`
+
+`[1] 2 1 3`
+
+This means we can use the output of `order(a)` to reshuffle `a`:
+
+`a[order(a)]`
+
+`[1]   10  100 1000`
+
+Alright, now that you understand the `order()` function, let us do something useful with it. You would like to rearrange your data frame such that it starts with the smallest planet and ends with the largest one. A sort on the `diameter` column.
+
+```{r Subset and sorting}
+# Use subset() on planets_df to select planets that have a diameter smaller than Earth.
+subset(planets_df,diameter>1)
+# Sort a in an decreasing order
+a <- c(100, 10, 1000)
+order(a)
+order(a,decreasing = TRUE)
+# Call order() on planets_df$diameter (the diameter column of planets_df). Store the result as size.
+size <- order(planets_df$diameter)
+
+# Now reshuffle planets_df with the positions vector as row indexes inside square brackets. Keep all columns.
+
+```
+
+## ==== List ====
+
+At this point in the course you are already familiar with:
+
+-   **Vectors** (one dimensional array): can hold numeric, character or logical values. The elements in a vector all have the same data type.
+
+-   **Matrices** (two dimensional array): can hold numeric, character or logical values. The elements in a matrix all have the same data type.
+
+-   **Data frames** (two-dimensional objects): can hold numeric, character or logical values. Within a column all elements have the same data type, but different columns can be of different data type.
+
+A **list** in R is similar to your to-do list at work or school: the different items on that list most likely differ in length, characteristic, and type of activity that has to be done.
+
+A list in R allows you to gather a variety of objects under one name (that is, the name of the list) in an ordered way. These objects can be matrices, vectors, data frames, even other lists, etc. It is not even required that these objects are related to each other in any way.
+
+You could say that a list is some kind super data type. You can store practically any piece of information in it!
+
+### Creating a list
+
+To construct a list you use the function `list()`:
+
+`my_list <- list(comp1, comp2 ...)`
+
+The arguments to the `list` function are the list components. Remember, these components can be matrices, vectors, other lists, etc.
+
+Just like on your to-do list, you want to avoid not knowing or remembering what the components of your list stand for. That is why you should give names to them:
+
+`my_list <- list(name1 = your_comp1, name2 = your_comp2)`
+
+This creates a list with components that are named `name1`, `name2`, and so on. If you want to name your lists after you've created them, you can use the names() function as you did with vectors.
+
+`my_list <- list(your_comp1, your_comp2)`
+
+`names(my_list) <- c("name1", "name2")`
+
+Being a huge movie fan, you decide to start storing information on good movies with the help of lists.
+
+Start by creating a list for the movie "The Shining". We have already created the variables mov, act and rev in your R workspace. Feel free to check them out in the console.
+
+### Selecting elements from a list
+
+Your list will often be built out of numerous elements and components. Therefore, getting a single element, multiple elements, or a component out of it is not always straightforward.
+
+One way to select a component is using the numbered position of that component. For example, to "grab" the first component of shining_list you type
+
+`shining_list[[1]]`
+
+You can also refer to the names of the components, with `[[ ]]` or with the `$` sign. Both will select the data frame representing the reviews:
+
+`shining_list[["reviews"]]`
+
+`shining_list$reviews`
+
+Besides selecting components, you often need to select specific elements out of these components. For example, with `shining_list[[2]][1]` you select from the second component, `actors` (`shining_list[[2]]`), the first element (`[1]`). When you type this in the console, you will see the answer is Jack Nicholson.
+
+```{r List}
+# Vector with numerics from 1 up to 10
+my_vector <- 1:10 
+# Matrix with numerics from 1 up to 9
+my_matrix <- matrix(1:9, ncol = 3)
+# First 10 elements of the built-in data frame mtcars
+my_df <- mtcars[1:10,]
+# Construct list with these different elements:
+my_list <- list(my_vector,my_matrix,my_df)
+# Print out my_list
+my_list
+# Add names to the components. Use for my_vector the name vec, for my_matrix the name mat and for my_df the name df.
+names(my_list) <- c("vec","mat","df")
+# Print out my_list
+my_list
+
+# The variables mov, act and rev in your R workspace
+mov <- "The Shining"
+act <- c("Jack Nicholson","Shelley Duvall","Danny Lloyd","Scatman Crothers","Barry Nelson")
+rev <- data.frame(scores=c(4.5,4.0,5.0), sources=c("IMDb1","IMDb2","IMDb3"),
+                  comments=c("Best Horror Film I Have Ever Seen",
+                             "A truly brilliant and scary film from Stanley Kubrick",
+                             "A masterpiece of psychological horror"))
+# Finish the code to build shining_list. Do not forget to name the list components accordingly (names are moviename, actors and reviews).
+rev
+shining_list <- list(mov,act,rev)
+# Print out shining_list
+shining_list
+# Select from shining_list the vector representing the actors.
+shining_list[2]
+# Select from shining_list the second element in the vector representing the actors.
+shining_list[[2]][2]
+
+```
+
+End-of-File\
+Pongsun B.\
+2023-03-01
