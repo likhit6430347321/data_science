@@ -1,0 +1,419 @@
+---
+title: "Data Transformation"
+author: "Pongsun B."
+date: "2024-08-22"
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+  - \pagenumbering{gobble}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Call required packages, ex. "readxl", "tidyverse"
+if(!require(readxl)){install.packages("readxl")}
+if(!require(tidyverse)){install.packages("tidyverse")}
+if(!require(rcompanion)){install.packages("rcompanion")}
+if(!require(DescTools)){install.packages("DescTools")}
+if(!require(Hmisc)){install.packages("Hmisc")}
+if(!require(corrplot)){install.packages("corrplot")}
+if(!require(formatR)){install.packages("formatR")}
+```
+
+The concepts and examples in this chapter are drawn from Mangiafico (2016), Parker (2020), Cornelissen (2022), Johnson, D. (2022), and Ryu (2022). For further details please refer to the mentioned literature.
+
+## ==== Data Manipulation with dplyr ====
+
+Tidy data is important, but it's not the end of the road. Often you won't have quite the right variables, or your data might need a little aggregation before you visualize it. The `dplyr` package can be used to solve these problems (and more!).
+
+The goal of `dplyr` is to provide verbs (functions) that help you solve the most common 95% of data manipulation problems. `dplyr` is similar to `ggplot2`, but instead of providing a grammar of graphics, it provides a grammar of data manipulation. Like `ggplot2`, `dplyr` helps you not just by giving you functions, but it also helps you think about data manipulation. In particular, `dplyr` helps by constraining you: instead of struggling to think about which of the thousands of functions that might help, you can just pick from a handful that are design to be very likely to be helpful.
+
+Here, we will learn four of the most important `dplyr` verbs:
+
+-   `filter()`
+
+-   `mutate()`
+
+-   `group by()`
+
+-   `summarise()`
+
+These verbs are easy to learn because they all work the same way: they take a data frame as the first argument, and return a modified data frame. The other arguments control the details of the transformation, and are always interpreted in the context of the data frame so you can refer to variables directly.
+
+We will also learn how to create data transformation pipelines using `%>%`. `%>%` plays a similar role to `+` in `ggplot2`: it allows you to solve complex problems by combining small pieces that are easily understood in isolation.
+
+Here, we only scratch the surface of `dplyr`'s capabilities but it should be enough to help you with data analysis and visualization problems.
+
+## ==== Filter Observations ====
+
+It is common to only want to explore one part of a dataset. A great data analysis strategy is to start with just one observation unit (one person, one city, etc), and understand how it works before attempting to generalize the conclusion to others. This is a great technique if you ever feel overwhelmed by an analysis: zoom down to a small subset, master it, and then zoom back out, to apply your conclusions to the full dataset.
+
+Filtering is also useful for extracting outliers. Generally, you don't want to just throw outliers away, as they're often highly revealing, but it's useful to think about partitioning the data into the common and the unusual. You should summarize the common to look at the broad trends and examine the outliers individually to see if you can figure out what's going on.
+
+For example, look at this plot that shows how the x and y dimensions of the diamonds are related:
+
+`ggplot(diamonds, aes(x, y)) + geom_bin2d()`
+
+There are more than 50,000 points in this dataset: most of them lie along the diagonal, but there are a handful of outliers. One clear set of incorrect values are those diamonds with zero dimensions. We can use `filter()` to pull them out:
+
+`filter(diamonds, x == 0 | y == 0)`
+
+This is equivalent to the base R code `diamonds[diamonds$x == 0 | diamonds$y== 0, ]`, but is more concise because `filter()` knows to look for in the data frame.
+
+In a real analysis, you'd look at the outliers in more detail to see if you can find the root cause of the data quality problem. In this case, we're just going to throw them out and focus on what remains.
+
+`diamonds_ok <- filter(diamonds, x > 0, y > 0, y < 20)`
+
+`ggplot(diamonds_ok, aes(x, y)) +      geom_bin2d() +      geom_abline(slope = 1, colour = "white", linewidth = 1, alpha = 0.5)`
+
+This plot is now more informative---we can see a very strong relationship between x and y. I've added the reference line to make it clear that for most diamonds, x and y are very similar. However, this plot still has problems:
+
+-   The plot is mostly empty, because most of the data lies along the diagonal.
+
+-   There are some clear bivariate outliers, but it's hard to select them with a simple filter.
+
+We can solve both of these problem by adding a new variable that's a transformation of x and y.
+
+### Useful Tools
+
+The comparison operators:
+
+-   `x == y`: x and y are equal.
+
+-   `x != y`: x and y are not equal.
+
+-   `x %in% c("a", "b", "c")`: x is one of the values in the right hand side.
+
+-   `x > y, x >= y, x < y, x <= y`: greater than, greater than or equal to, less than, less than or equal to.
+
+The logical operators:
+
+-   `!x` (pronounced "not x"), flips TRUE and FALSE so it keeps all the values where x is FALSE.
+
+-   `x & y`: TRUE if both x and y are TRUE.
+
+-   `x | y`: TRUE if either x or y (or both) are TRUE.
+
+-   `xor(x, y)`: TRUE if either x or y are TRUE, but not both (exclusive or).
+
+```{r Filter_Observations, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+diamonds
+data(diamonds)
+
+summary(diamonds)
+# Plot full data (geom = geometric) RGB = 256*256*256 00~FF
+ggplot(diamonds, aes(x, y)) +
+  geom_point(color = "#0066FF")
+# aes = aestatic
+# geom = geometric
+# Pull out outliers
+filter(diamonds, x == 0 | y == 0)
+# Provide multiple arguments to filter() and plot the result
+diamonds_ok <- diamonds %>% 
+  filter( x > 0, y > 0, y < 20 )
+diamonds_ok <- filter(diamonds, x > 0, y > 0, y < 20)
+
+
+
+ggplot(diamonds_ok, aes(x, y)) +
+  geom_point() +
+  geom_abline(slope = 1, intercept = 0, color = "red", linewidth = 1, alpha = 0.5)
+
+# abline: y = ax + b
+# alpha = transparency (0-1)
+
+
+# Practice your filtering skills
+# (1) Finding all the diamonds with equal x and y dimensions.
+filter(diamonds, x == y)
+
+# (2) A depth between 55 and 70.
+filter(diamonds, depth >= 55, depth <= 70)
+filter(diamonds, depth >= 55 & depth <= 70)
+
+# (3) A carat smaller than the median carat.
+median(diamonds$carat)
+filter(diamonds, carat < median(carat))
+
+# (4) Cost more than $10,000 per carat.
+filter(diamonds, (price / carat) > 10000)
+
+# (5) Are of good or better quality (cut). # good, very good,
+filter(diamonds, cut >= "Good")
+filter(diamonds, cut != c("Fair"))
+
+# price per carat write in excel use mutate
+```
+
+## ==== Create New Variables with `mutate() ====`
+
+To better explore the relationship between x and y, it's useful to "rotate" the plot so that the data is flat, not diagonal. We can do that by creating two new variables: `sym` represents the difference between x and y (which in this context represents the symmetry of the diamond) and `size` represents its size (the length of the diagonal).
+
+To create new variables use `mutate()`. Like `filter()` it takes a data frame as its first argument and returns a data frame. Its second and subsequent arguments are named expressions that generate new variables. Like `filter()` you can refer to variables just by their name, you don't need to also include the name of the dataset.
+
+`diamonds_ok2 <- mutate(diamonds_ok, sym = x - y, diag = sqrt(x^2 + y^2))`
+
+We can more easily see the pattern followed by most diamonds, and we can easily select outliers. Here, it doesn't seem important whether the outliers are positive (i.e. x is bigger than y) or negative (i.e. y is bigger x). So we can use the absolute value of the symmetry variable to pull out the outliers. We'll check out the results with a histogram.
+
+### Useful Tools
+
+Typically, transformations will be suggested by your domain knowledge. However, there are a few transformations that are useful in a surprisingly wide range of circumstances.
+
+-   Log-transformations: They turn multiplicative relationships into additive relationships; they compress data that varies over orders of magnitude; they convert power relationships to linear relationship.
+
+-   Relative difference: If you're interested in the relative difference between two variables, use `log(x / y)`. It's better than `x / y` because it's symmetric---if `x < y`, `x / y` takes values `[0, 1)`, but if `x > y`, `x / y` takes values `(1, Inf)`.
+
+-   Sometimes integrating or differentiating might make the data more interpretable: if you have distance and time, would speed or acceleration be more useful? (or vice versa). (Note that integration makes data more smooth; differentiation makes it less smooth.)
+
+-   Partition a number into magnitude and direction with `abs(x)` and `sign(x)`.
+
+-   Sometimes it's useful to change positions to polar coordinates (or vice versa): distance `sqrt(x^2 + y^2)` and angle `atan2(y, x)`.
+
+```{r Mutate_Data, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+# Create new variables, sym and size
+diamonds_ok2 <- diamonds_ok %>% 
+  mutate(sym = abs(x-y),
+         diag = round(sqrt(x^2 + y^2), 3))
+#round ปรับตำแหน่งทศนิยม
+diamonds_ok2 <- mutate(diamonds_ok,
+                       sym = abs(x - y),
+                       diag = sqrt(x^2 + y^2))
+diamonds_ok2
+# Plot diag VS sym # next week swap logi
+ggplot(diamonds_ok2, aes(diag, sym)) +
+  stat_bin2d()
+# Filter out the outliers
+diamonds_ok3 <- filter(diamonds_ok2, abs(sym) < 0.2)
+ggplot(diamonds_ok3, aes(diag, sym)) +
+  stat_bin2d()
+# Plot the histogram of sym
+ggplot(diamonds_ok3, aes(abs(sym))) + 
+  geom_histogram(binwidth = 0.01)
+
+# Practice your variable creation skills
+# (1) The approximate volume of the diamond (using x, y, and z).
+diamonds_ok2 <- mutate(diamonds_ok2, vol = x*y*z)
+# (2) The approximate density of the diamond.
+diamonds_ok2 <- mutate(diamonds_ok2, density = carat/vol*1000)
+# (3) The price per carat.
+diamonds_ok2 <- mutate(diamonds_ok2, p_c = price/carat)
+# Plot the scatter plot between carat and price
+ggplot(diamonds_ok2, aes(carat,price)) +
+  geom_point()
+# (4) Log transformation of carat and price.
+diamonds_ok2 <- mutate(diamonds_ok2,
+                       log_price = log10(price),
+                       log_carat = log10(carat))
+# Plot the scatter plot between carat and price (with log)
+ggplot(diamonds_ok2, aes(log_carat,log_price)) +
+  geom_point()
+
+ggplot(diamonds_ok2, aes(log10(carat),log10(price))) +
+  geom_point(col = "#0066FF")
+```
+
+## ==== Group-wise Summaries ====
+
+Many insightful visualizations require that you reduce the full dataset down to a meaningful summary. `ggplot2` provides a number of `geoms` that will do summaries for you. But it's often useful to do summaries by hand for more flexibility and you can use the summaries for other purposes.
+
+`dplyr` does summaries in two steps:
+
+1.  Define the grouping variables with `group_by()`.
+
+2.  Describe how to summarize each group in a single row with `summarise()`
+
+We can also supply additional variables to `group_by()` to create groups based on more than one variable. Note that the special summary function `n()` counts the number of observations in each group.
+
+### Useful Tools
+
+`summarise()` needs to be used with functions that take a vector of *n* values and always return a single value. Those functions include:
+
+-   Counts: `n()`, `n_distinct(x)`.
+
+-   Middle: `mean(x)`, `median(x)`.
+
+-   Spread: `sd(x)`, `mad(x)`, `IQR(x)`. MAD = median absolute deviation (skewed data)
+
+-   Extremes: `quartile(x)`, `min(x)`, `max(x)`.
+
+-   Positions: `first(x)`, `last(x)`, `nth(x, 2)`.
+
+Another extremely useful technique is to use `sum()` or `mean()` with a logical vector. When a logical vector is treated as numeric, `TRUE` becomes 1 and `FALSE` becomes 0. This means that `sum()` tells you the number of TRUEs, and `mean()` tells you the proportion of TRUEs. For example, the following code counts the number of diamonds with carat greater than or equal to 4, and the proportion of diamonds that cost less than \$1000.
+
+`summarise(diamonds, n_big = sum(carat >= 4), prop_cheap = mean(price < 1000))`
+
+Most summary functions have a `na.rm` argument: `na.rm = TRUE` tells the summary function to remove any missing values prior to summation. This is a convenient shortcut: rather than removing the missing values then summarizing, you can do it in one step.
+
+```{r Group-wise_Summaries, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+# Determine the number of groups of clarity in the diamonds dataset
+summarise(diamonds_ok, 
+          n_cut = n_distinct(cut) ,
+          n_color = n_distinct(color),
+          n_clarity = n_distinct(color))
+
+diamonds_ok%>%
+  group_by(cut) %>% 
+  summarise(num = n())
+
+diamonds_ok2 %>%
+  group_by(cut) %>% 
+  summarise(num = n()
+            ,avgprice_bt_cut = mean(p_c))
+
+# To look at the average price per clarity, we first group by clarity, then summarize
+sum_clarity <- diamonds_ok2 %>%
+  group_by(clarity) %>% 
+  summarise(price = mean(p_c)) # คำตอบของ Group
+
+# Print out sum_clarity         
+sum_clarity
+
+# Plot sum_clarity
+ggplot(sum_clarity, aes(clarity, price)) +
+  geom_line(aes(group = 1), colour = "grey80") +
+  geom_point(size = 2)
+
+# Compute a frequency polygon that shows how cut and depth interact.
+cut_depth <- diamonds_ok2 %>%
+  group_by(cut, depth) %>% 
+  summarise(num = n()) %>% 
+  filter(depth > 55, depth < 70)
+
+cut_depth2 <- diamonds_ok2 %>%
+  count(cut, depth)
+
+# Print out cut_depth  
+cut_depth
+cut_depth2
+
+# Plot cut_depth
+ggplot(cut_depth, aes(depth, num, color = cut)) +
+  geom_line()
+ggplot(cut_depth2, aes(depth, n, color = cut)) +
+  geom_line()
+# Use a grouped mutate() to convert counts to proportions, so it’s easier to compare across the cuts.
+cut_depth <- cut_depth %>%
+  mutate(prop = num / sum(num)*100)
+# Plot cut_depth again
+ggplot(cut_depth, aes(depth, prop, colour = cut)) +
+  geom_line()
+# Count the number of diamonds with carat greater than or equal to 4, and the proportion of diamonds that cost less than $1000.
+summarise(diamonds_ok2,
+          n_big_carat = sum(carat >= 4),
+          prop_cheap = sum(price < 1000)/n()*100)
+  
+        
+          
+```
+
+## ==== Statistical Considerations ====
+
+When summarizing with the mean or median, it's always a good idea to include a count and a measure of spread. This helps you calibrate your assessments---if you don't include them you're likely to think that the data is less variable than it really is, and potentially draw unwarranted conclusions.
+
+The following example extends our previous summary of the average price by including the number of observations in each group, and the upper and lower quartiles. It suggests the mean might be a bad summary for this data - the distributions of price are so highly skewed that the mean is higher than the upper quartile for some of the groups!
+
+You'll often see a similar pattern whenever you plot number of observations vs. an average. Be aware!
+
+```{r Statistical_Considerations, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+# Include the number of observations in each group of cut, and the upper and lower quartiles in the average price
+by_cut <- diamonds_ok2 %>%
+  group_by(cut) %>%
+  summarise(num = n(),
+            mean = mean(price),
+            Q1 = quantile(price, 0.25),
+            Q3 = quantile(price, 0.75))
+
+# Print out by_cut
+by_cut
+# Plot by_clarity
+ggplot(by_cut, aes(cut, mean)) +
+  geom_linerange(aes(ymin = Q1, ymax = Q3)) +
+  geom_line(aes(group = 1), colour = "grey50") +
+  geom_point(aes(size = num))
+# Practice your skills
+# (1) For each combination of diamond quality (e.g. cut, colour and clarity), count the number of diamonds, the average price and the average size. Visualise the results.
+diamond_by_cut <- diamonds_ok2 %>% 
+  group_by(cut) %>%
+  summarise(num = n(),
+            avg_price = mean(price),
+            avg_size = mean(depth))
+
+ggplot(diamonds_ok2, aes(cut)) +
+  geom_bar()
+ggplot(diamond_by_cut, aes(cut, num)) +
+  geom_bar(stat = "identity")
+
+ggplot(diamond_by_cut, aes(cut, avg_price)) +
+  geom_bar(stat = "identity")
+
+ggplot(diamond_by_cut, aes(cut, avg_size)) +
+  geom_bar(stat = "identity")
+
+# (2) Compute a histogram of carat by “hand” using a binwidth of 0.1. Display the results with geom_bar(stat = "identity"). (Hint: you might need to create a new variable first.)
+# Use geom_bar (by hand)
+
+
+count_carat <- diamonds_ok2 %>% count(aa = cut_width(diamonds_ok2$carat, 0.1))
+ggplot(count_carat, aes(aa,n))+
+  geom_bar(stat = "identity")
+
+diamonds %>%
+mutate(carat_bin = cut(carat, breaks = seq(0, max(carat) + 0.1, by = 0.1), right = FALSE)) %>%
+count(carat_bin) %>%
+ggplot(aes(carat_bin, n)) +
+geom_bar(stat = "identity")
+
+# Use geom_histogram
+ggplot(diamonds_ok2, aes(carat)) +
+  geom_histogram(binwidth = 0.1, color = "blue", fill = "white")
+
+
+```
+
+## ==== Learning More ====
+
+`arrange()` orders observations according to variable(s). This is most useful when you're looking at the data from the console. It can also be useful for visualizations if you want to control which points are plotted on top.
+
+`select()` picks variables based on their names. Useful when you have many variables and want to focus on just a few for analysis.
+
+Finally, RStudio provides a handy `dplyr` cheatsheet that will help jog your memory when you're wondering which function to use. Get it from <https://posit.co/wp-content/uploads/2022/10/data-transformation-1.pdf>.
+
+```{r Learning_More, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+lahman <- read.csv("https://raw.githubusercontent.com/guru99-edu/R-Programming/master/lahman-batting.csv")
+
+# Select(), Filter(), Arrange(), Pipeline 
+lahman2 <- read.csv("https://raw.githubusercontent.com/guru99-edu/R-Programming/master/lahman-batting.csv") %>%
+  select(c(playerID, yearID, AB, teamID, lgID, G, R, HR, SH)) %>%
+  arrange(playerID, teamID, yearID)
+# select(c(playerID, yearID, teamID, lgID, AB, G, R, HR, SH)) %>%
+# arrange(desc(playerID), teamID, desc(yearID))  # Ascending (1,2,3) $ Descending (3,2,1)
+
+lahman2 %>% 
+  summarise(no_lg = n_distinct(lgID))
+
+lahman3 <- lahman2 %>% 
+  group_by(lgID) %>%
+  summarise(mean_HR = mean(HR, na.rm = T), mean_SH = mean(SH, na.rm = T))
+# NaN = Not a Number
+sum(is.na(lahman2$SH))
+
+meanHR <- lahman2 %>% 
+  group_by(lgID, teamID) %>%
+  summarise(mean_HR = mean(HR, na.rm = T), mean_SH = mean(SH, na.rm = T))
+
+lahman4 <- lahman2 %>% 
+  group_by(yearID) %>%
+  summarise(mean_G = mean(G, na.rm = T))
+
+ggplot(lahman4, aes(x = yearID, y = mean_G)) + 
+  geom_line(col = "red") + 
+  labs(x = "Year", 
+       y = "Average games played",
+       title = "Average games played from 1871 to 2017")
+```
+
+End-of-File\
+Pongsun B.\
+2024-08-22
