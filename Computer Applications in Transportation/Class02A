@@ -1,0 +1,297 @@
+---
+title: "Read, Write and Cleaning Data"
+author: "Pongsun B."
+date: "2024-08-22"
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+  - \pagenumbering{gobble}
+---
+
+## ==== First things first ====
+
+Important matters should be dealt with before other things.
+
+1.  Setting the working directory in R can be done using the `setwd()` function.
+
+### Mac
+
+`"/Users/USERNAME/Documents/myR/"`
+
+### Windows
+
+`"C:\Users\USERNAME\Documents\myR\"`
+
+To read a CSV data file within a sub-folder `Data` under the working directory
+
+`"./Data/FILENAME.csv"`
+
+2.  Installing R packages can be done using the `install.packages()` function.
+
+3.  Loading R packages is quite easy by just typing `library()` function.
+
+4.  Installing and Loading R packages can be combined into one step by `if(!require()){install.packages(" ")}`
+
+```{r Set working directory}
+# Check current working directory  
+getwd()
+# Set working directory
+
+# Call required packages, ex. "readxl", "tidyverse"
+library(readxl)
+library(tidyverse)
+if(!require(tidyverse)){install.packages("tidyverse")}
+if(!require(tidyverse)){install.packages("readxl")}
+if(!require(tidyverse)){install.packages("dplyr")}
+```
+
+## ==== Read Data in R ====
+
+### Read CSV (Comma Separated Value) file
+
+```{r Read CSV file}
+# Read CSV file "RenSteve.csv" with `read_csv`
+ClassData <- read_csv("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/RenSteve.csv")
+ClassData
+# Use `spec()` to retrieve the full column specification for this data
+spec(ClassData)
+# Read CSV file with `read.csv` and `read.table`
+ClassData2 <- read.csv("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/RenSteve.csv", header = F)
+ClassData3 <-  read.table("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/RenSteve.csv", header = F, stringsAsFactors = T)
+ClassData3
+summary(ClassData3)
+# Read CSV file from Dropbox (MUST edit dl=0 to dl=1!!)
+# URL: https://www.dropbox.com/scl/fi/gg5okzhny0wjejrgw066s/sales.csv?rlkey=qggpmjmyfh2w8e0r3wt0tmsbd&dl=0
+df_sales <- read_csv("https://www.dropbox.com/scl/fi/gg5okzhny0wjejrgw066s/sales.csv?rlkey=qggpmjmyfh2w8e0r3wt0tmsbd&dl=1")
+df_sales
+# Read shared file from OneDrive  (MUST edit "embed" to "download"!!)
+# URL: https://onedrive.live.com/embed?resid=B83741508FA07690%211290&authkey=!AEBphFQulUSB8HQ
+df_sales2 <- read_csv("https://onedrive.live.com/download?resid=B83741508FA07690%211290&authkey=!AEBphFQulUSB8HQ")
+df_sales2
+# Another method
+if(!require(stringr)){install.packages("stringr")}
+import_url <- str_replace("https://onedrive.live.com/embed?resid=B83741508FA07690%21259&authkey=!AKpzaWBcwCfeZ9E","embed","download")
+test_Thai <- read_tsv(import_url)
+test_Thai
+# Another way is using "Import Dataset" feature of RStudio
+# Import Dataset > From Text (base) or From Text (readr)
+
+RenSteve2 <- read_csv("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/RenSteve.csv",
+                      col_names = FALSE)
+summary(RenSteve2)
+```
+
+### Read Excel file
+
+```{r Read Excel file}
+# Read Excel file "RenSteve.xlsx" with `read_excel`
+ClassData4 <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/RenSteve.xlsx")
+ClassData4
+# Assign "range of data" to be read
+# File: TopMovies.xlsx
+# Range: C5:F55
+TopMovies <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/TopMovies.xlsx", range = "C5:F55")
+TopMovies
+# Excel with multiple sheets
+# File: multi.xlsx
+df_drinks <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/multi.xlsx", sheet = "drinks")
+df_drinks
+df_accident <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/multi.xlsx", sheet = "accident")
+df_accident
+# Read Excel file from Dropbox
+tempURL <- "https://www.dropbox.com/s/6un9tfrz6vy74fq/RenSteve.xlsx?dl=1"
+download.file(tempURL, destfile = "local.xlsx")
+my.data <- read_excel("local.xlsx", col_names = TRUE, col_types = "text")
+multi <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/multi.xlsx")
+```
+
+## ==== Write Data in R ====
+
+### Save data frame to CSV file
+
+```{r Save data frame to CSV file}
+# Save data frame to CSV file with "write.csv" or "write_csv"
+# Use write.csv
+write.csv(multi)
+# Use write_csv
+# Require library(readr)
+
+```
+
+### Write data frame to Excel file
+
+<https://sparkbyexamples.com/r-programming/export-excel-in-r-xlsx-or-xls/><https://datatofish.com/export-dataframe-to-excel-in-r/>
+
+The r-package `writexl` is required to write `.xlsx` files. More specifically, to write to an Excel file we will use the `write_xlsx` function.
+
+Let's start by creating a data frame with some variables.
+
+`df <- data.frame("Age" = c(21, 22, 20, 19, 18, 23), "Names" = c("Andreas", "George", "Steve", "Sarah", "Joanna", "Hanna"))`
+
+`str(df)`
+
+To write to `.xlsx` using the `write_xlsx` function from the `writexl` package:
+
+`if(!require(writexl)){install.packages("writexl")}`
+
+`write_xlsx(df, 'names_ages.xlsx')`
+
+```{r Write data frame to Excel file}
+df <- data.frame("Age" = c(21, 22, 20, 19, 18, 23), 
+                 "Names" = c("Andreas", "George", "Steve", "Sarah", "Joanna", "Hanna"))
+str(df)
+
+# Export output to .xlsx file
+if(!require(writexl)){install.packages("writexl")}
+write_xlsx(df, 'names_ages.xlsx')
+
+```
+
+## ==== Data Cleaning in R ====
+
+### How to delete a row of data frame?
+
+To delete a row of data frame in R, you can use the `â€“` operator. For example, if you want to remove the first row from a data frame in R you can use the following code: `dataFrame <- dataFrame[-1, ]`. This code will remove the first row from the data frame. Of course, if you need to drop multiple rows, you can add them using the vector function: `dataFrame <- [-c(1, 2, 3),]`.
+
+It is also possible to use the `slice()` function from the package `dplyr` to delete a row by its index.
+
+```{r To delete a row of data frame}
+# Read Excel file "play_data.xlsx" with "read_excel"
+play_data <- read_excel("/Users/slick/Library/CloudStorage/OneDrive-ChulalongkornUniversity/University/Senior/Comp App Trans/Data/play_data.xlsx")
+play_data
+# Delete the second row
+play_data <- play_data[-2, ]
+# Delete the 5th to 7th rows 
+play_data <- play_data[-c(5,6,7),]
+play_data
+# To remove 1st to 4th rows using the slice() function
+play_data <- play_data[-c(1:4),]
+play_data
+```
+
+### How to remove a row from a matrix?
+
+Removing a row from a matrix can be done in the same way you delete a row from a data frame: `mtx <- mtx[-1,]`.
+
+```{r To remove a row from a matrix}
+mtx <- matrix(seq(1,15), byrow = TRUE, ncol = 3)
+mtx
+# Drop the last row from matrix
+mtx <- mtx[-1,]
+mtx
+```
+
+### Delete rows based on conditions using the `filter()` function
+
+Sometimes we need to remove a row (or rows) based on one or many conditions. We can use the `filter()` function from the package `dplyr`.
+
+Note that %\>% is called a "Pipeline", which means "then".
+
+```{r using the filter() function}
+play_data
+# Delete the data with first name "James"
+play_data2 <- play_data %>%
+  filter(First_Name != "James")
+play_data2
+# Delete the data with first name "James" and all "fifth" day
+play_data3 <- play_data %>%
+  filter(First_Name != "James" & Day != "Fifth")
+
+play_data3
+
+
+```
+
+### Remove ALL rows with missing values (NA)
+
+To remove the missing values, use the `na.omit()` function.
+
+`dataf_na <- na.omit(dataf_na)`
+
+Alternatively, we can remove all rows with NA in the data frame using the `drop_na()` function in the package `tidyr`.
+
+```{r Remove the missing values (NA)}
+# Use the `na.omit()` function
+play_data4 <- play_data %>%
+  na.omit()
+# Use the `drop_na()` function in the  package `tidyr`
+play_data5 <- play_data %>%
+  drop_na()
+
+# Create test data
+student.data <- data.frame(student = c("Ben","Jena","Jay","Lek","Bruce"),
+                gender = c("M","F","F",NA,"M"),
+                score1 = c(10,20,NA,40,50),
+                score2 = c(25,NA,10,20,17),
+                score3 = c(6,4,-99999,5,7))
+student.data$score3[student.data$score3 == -99999] <- NA
+student.data
+# To remove all data with NA
+new.student.data <- student.data %>%
+  na.omit()
+# Use the `complete.cases` function
+student.data1 <- student.data[complete.cases(student.data), ]
+  
+student.data2 <- complete.cases(student.data)
+
+# Check only "score1","score2" and "score3"
+student.data3 <- student.data[complete.cases(student.data[, c("score1", "score2", "score3")]), ]
+
+
+# To replace NA with the mean of known data
+which(is.na(student.data$score1))
+student.data$score1[which(is.na(student.data$score1))] <- mean(student.data$score1, na.rm = TRUE)
+
+
+```
+
+### How to remove duplicate rows and columns
+
+To delete duplicate rows in R you can use the `duplicated()` function.
+
+`study_df.un <- study_df[!duplicated(df), ]`
+
+To remove duplicate columns we added the `as.list()` function and removed the `","`.
+
+The function `distinct()` is used to keep only unique/distinct rows from the data frame. When working with the `distinct()` function, if there are duplicate rows, only the first row of the identical ones is preserved. It is also possible to delete duplicate rows based on values in a certain column.
+
+```{r Remove duplicate rows and columns}
+# Creating a data frame
+example_df <- data.frame(FName = c('Steve', 'Steve', 'Erica', 'John', 'Brody', 'Lisa', 'Lisa', 'Jens'),
+                         LName = c('Johnson', 'Johnson', 'Ericson', 'Peterson', 'Stephenson', 'Bond', 'Bond', 'Gustafsson'),
+                         Age = c(34, 34, 40, 44, 44, 51, 51, 50),
+                         Gender = c('M', 'M', 'F', 'M', 'M', 'F', 'F', 'M'))
+
+# Remove duplicated rows from data frame
+example_df.un <- example_df %>%
+  distinct()
+
+# Remove duplicate rows using the unique() function
+examp_df <- unique(example_df)
+
+# Drop duplicated columns
+# In this case, there are no truly duplicated columns in the dataset,
+# but if there were, we could drop them like this:
+ex_df.un <- example_df[, !duplicated(as.list(example_df))]
+
+# Drop duplicates with the distinct() function (from dplyr package)
+ex_df.remove <- example_df %>%
+  distinct()
+
+# Remove duplicate rows based on the "Age" column, but keep all columns
+ex_df_age <- example_df %>%
+  distinct(Age, .keep_all = TRUE)
+
+# Display the results
+example_df.un  # Without any duplicated rows
+examp_df       # Using unique()
+ex_df.un       # Checking if any duplicated columns were dropped
+ex_df.remove   # Dropping rows based on all columns
+ex_df_age      # Removing duplicates based only on Age
+
+```
+
+End-of-File\
+Pongsun B.\
+2024-08-22
