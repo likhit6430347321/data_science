@@ -1,0 +1,416 @@
+---
+title: "Probability"
+author: "Pongsun B."
+date: "2024-09-19"
+output:
+  html_document: default
+  pdf_document: default
+header-includes:
+  - \pagenumbering{gobble}
+---
+
+## ==== First things first ====
+
+Set working directory and call packages.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# Call required packages, ex. "readxl", "tidyverse"
+if(!require(readxl)){install.packages("readxl")}
+if(!require(tidyverse)){install.packages("tidyverse")}
+
+```
+
+# Introduction
+
+Probability theory is the foundation of statistics, and R has plenty of machinery for working with probability, probability distributions, and random variables. This chapter shows you how to calculate probabilities from quantiles, calculate quantiles from probabilities, and generate random variables drawn from distributions.
+
+## Names of Distributions
+
+R has an abbreviated name for every probability distribution. This name is used to identify the functions associated with the distribution. For example, the name of the Normal distribution is â€œnorm,â€ which is the root of the function names listed in **Table 1**.
+
+**Table 1: Normal distribution functions**
+
+| **Function** | **Purpose**                  |
+|--------------|------------------------------|
+| `dnorm`      | Normal density               |
+| `pnorm`      | Normal distribution function |
+| `qnorm`      | Normal quantile function     |
+| `rnorm`      | Normal random variates       |
+
+**Table 2** describes some common discrete distributions, and **Table 3** describes several common continuous distributions.
+
+**Table 2: Common discrete distributions**
+
+| **Discrete distribution**       | **R name** | **Parameters**                                                                                               |
+|---------------------------------|------------|--------------------------------------------------------------------------------------------------------------|
+| Binomial                        | `binom`    | `n` = number of trials; `p` = probability of success for one trial                                           |
+| Geometric                       | `geom`     | `p` = probability of success for one trial                                                                   |
+| Hypergeometric                  | `hyper`    | `m` = number of white balls in urn; `n` = number of black balls in urn; `k` = number of balls drawn from urn |
+| Negative binomial (NegBinomial) | `nbinom`   | `size` = number of successful trials; either `prob` = probability of successful trial or `mu` = mean         |
+| Poisson                         | `pois`     | `lambda` = mean                                                                                              |
+
+**Table 3: Common continuous distributions**
+
+| **Continuous distribution** | **R name** | **Parameters**                                                                              |
+|-----------------------------|------------|---------------------------------------------------------------------------------------------|
+| Beta                        | `beta`     | `shape1`; `shape2`                                                                          |
+| Chi-squared (Chisquare)     | `chisq`    | `df` = degrees of freedom                                                                   |
+| Exponential                 | `exp`      | `rate`                                                                                      |
+| F                           | `f`        | `df1` and `df2` = degrees of freedom                                                        |
+| Gamma                       | `gamma`    | `rate`; either `rate` or `scale`                                                            |
+| Log-normal (Lognormal)      | `lnorm`    | `meanlog` = mean on logarithmic scale; `sdlog` = standard deviation on logarithmic scale    |
+| Logistic                    | `logis`    | `location`; `scale`                                                                         |
+| Normal                      | `norm`     | `mean`; `sd` = standard deviation                                                           |
+| Studentâ€™s *t* (TDist)     | `t`        | `df` = degrees of freedom                                                                   |
+| Uniform                     | `unif`     | `min` = lower limit; `max` = upper limit                                                    |
+| Weibull                     | `weibull`  | `shape`; `scale`                                                                            |
+| Wilcoxon                    | `wilcox`   | `m` = number of observations in first sample; `n` = number of observations in second sample |
+
+#### **Warning!!**
+
+All distribution-related functions require distributional parameters, such as `size` and `prob` for the binomial or `prob` for the geometric. The big â€œgotchaâ€ is that the distributional parameters may not be what you expect. For example, we would expect the parameter of an exponential distribution to be *Î²*, the mean. The R convention, however, is for the exponential distribution to be defined by the rate = 1/*Î²*, so we often supply the wrong value. The moral is, study the help page before you use a function related to a distribution. Be sure youâ€™ve got the parameters right.
+
+#### See Also
+
+There are many other distributions implemented in downloadable packages; see the CRAN task view devoted to [probability distributions](http://cran.r-project.org/web/views/Distributions.html). The `SuppDists` package is part of the R base, and it includes 10 supplemental distributions. The `MASS` package, which is also part of the base, provides additional support for distributions, such as maximum-likelihood fitting for some common distributions as well as sampling from a multivariate normal distribution.
+
+## Generating Random Numbers
+
+The simple case of generating a uniform random number between 0 and 1 is handled by the `runif` function. This example generates one uniform random number:
+
+```         
+runif(1)
+#> [1] 0.915
+```
+
+> Note: If you are saying `runif` out loud (or even in your head), you should pronounce it â€œare unifâ€ instead of â€œrun if.â€ The term `runif` is a *portmanteau* of â€œrandom uniformâ€ so should not sound as if itâ€™s a flow control function.
+
+R can generate random variables from other distributions as well. For a given distribution, the name of the random number generator is â€œrâ€ prefixed to the distributionâ€™s abbreviated name (e.g., `rnorm` for the normal distributionâ€™s random number generator). This example generates one random value from the standard normal distribution:
+
+```         
+rnorm(1)
+#> [1] 1.53
+```
+
+There are random number generators for all built-in distributions. Simply prefix the distribution name with â€œrâ€ and you have the name of the corresponding random number generator.
+
+```{r Random numbers, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+# Generate a vector of 10 numbers between 0 and 1
+runif(10)
+# Ten uniform variate between -3 and +3
+runif(10, -3, 3)
+# Ten normal variate, mean 100 and SD 15
+rnorm(10, mean = 100, sd = 15)
+# Ten binomial variate
+rbinom(10, size = 1, prob = .5)
+# Ten Poisson variate
+rpois(10, lambda = 10) # time/day
+# One exponential variate
+rexp(10, rate = 0.1) # rate = 1/lambda       
+
+```
+
+The examples given so far use simple scalars for distributional parameters. Yet the parameters can also be vectors, in which case R will cycle through the vector while generating random values. The following example generates three normal random values drawn from distributions with means of â€“10, 0, and +10, respectively (all distributions have a standard deviation of 1.0):
+
+```         
+rnorm(3, mean = c(-10, 0, +10), sd = 1)
+#> [1] -9.420 -0.658 11.555
+```
+
+This is a powerful capability in cases such as hierarchical models, where the parameters are themselves random. The next example calculates 30 draws of a normal variate whose mean is itself randomly distributed and with hyperparameters of *Î¼* = 0 and *Ïƒ* = 0.2:
+
+```{r Random numbers with hyperparameters, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+means <- rnorm(30, mean = 0, sd = 0.2)
+rnorm(30, mean = means, sd = 1)
+
+```
+
+## Generating Reproducible Random Numbers
+
+In case that you want to generate a sequence of random numbers, but you want to reproduce the same sequence every time your program runs.
+
+Before running your R code, call the `set.seed` function to initialize the random number generator to a known state:
+
+```         
+set.seed(123) # Or use any other positive integer...
+```
+
+After generating random numbers, you may often want to reproduce the same sequence of â€œrandomâ€ numbers every time your program executes. That way, you get the same results from run to run. One of the authors once supported a complicated Monte Carlo analysis of a huge portfolio of securities. The users complained about getting slightly different results each time the program ran. No kidding! The analysis was driven entirely by random numbers, so of course there was randomness in the output. The solution was to set the random number generator to a known state at the beginning of the program. That way, it would generate the same (quasi-)random numbers each time and thus yield consistent, reproducible results.
+
+In R, the `set.seed` function sets the random number generator to a known state. The function takes one argument, an integer. Any positive integer will work, but you must use the same one in order to get the same initial state.
+
+The function returns nothing. It works behind the scenes, initializing (or reinitializing) the random number generator. The key here is that using the same seed restarts the random number generator back at the same place.
+
+```{r Set seed, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+# Initialize generator to known state
+set.seed(165)
+
+# Generate ten random numbers between 0 and 1
+runif(10)  
+
+# Reinitialize to the same known state
+set.seed(165)   
+
+# Generate the same ten "random" numbers
+runif(10)       
+
+```
+
+#### **Warning**
+
+When you set the seed value and freeze your sequence of random numbers, you are eliminating a source of randomness that may be critical to algorithms such as Monte Carlo simulations. Before you call `set.seed` in your application, ask yourself: Am I undercutting the value of my program or perhaps even damaging its logic?
+
+## Generating Random Sequences
+
+The `sample` function will randomly select *n* items from a set:
+
+```         
+sample(set, n)
+```
+
+The `sample` function normally samples without replacement, meaning it will not select the same item twice. Some statistical procedures (especially the bootstrap) require sampling *with* replacement, which means that one item can appear multiple times in the sample. Specify `replace=TRUE` to sample with replacement.
+
+For example, to generate a random sequence, such as a series of simulated coin tosses or a simulated sequence of Bernoulli trials, we can use the `sample` function. Sample *n* draws from the set of possible values, and set `replace=TRUE`.
+
+```         
+sample(set, n, replace = TRUE)
+```
+
+With `replace=TRUE`, however, `sample` can select items over and over; this allows you to generate long, random sequences of items.
+
+By default, `sample` will choose equally among the set elements and so the probability of selecting either `TRUE` or `FALSE` is 0.5. With a Bernoulli trial, the probability *p* of success is not necessarily 0.5. You can bias the sample by using the `prob` argument of `sample`; this argument is a vector of probabilities, one for each set element.
+
+```{r Random sequences, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+# Generate a random sequence of 10 simulated flips of a coin
+sample(c("H", "T"), 10, replace = TRUE)
+
+# Generates a sequence of 20 Bernoulli trialsâ€”random successes or failures.
+# Use TRUE to signify a success
+sample(c(FALSE, TRUE), 20, replace = TRUE)
+
+# Generate 20 Bernoulli trials with a probability of success p = 0.8
+sample(c(FALSE, TRUE), 20, replace = TRUE, prob = c(0.2, 0.8))
+
+# Use rbinom, the random generator for binomial variables
+rbinom(20, 1, 0.8)
+
+```
+
+## Randomly Permuting a Vector
+
+If `v` is your vector, then `sample(v)` returns a random permutation.
+
+We typically think of the `sample` function for sampling from large datasets. However, the default parameters enable you to create a random rearrangement of the dataset. The function call `sample(v)` is equivalent to:
+
+```         
+sample(v, size = length(v), replace = FALSE)
+```
+
+which means â€œselect all the elements of `v` in random order while using each element exactly once.â€ That is a random permutation.
+
+Here is a random permutation of 1, â€¦, 10:
+
+```         
+sample(1:10)
+#>  [1]  2  7 10  5  6  3  4  1  9  8
+```
+
+## Probabilities for Discrete Distributions
+
+For a simple probability, *P*(*X* = *x*), use the density function. All built-in probability distributions have a density function whose name is â€œdâ€ prefixed to the distribution name. For example, `dbinom` for the binomial distribution.
+
+For a cumulative probability, *P*(*X* â‰¤ *x*), use the distribution function. All built-in probability distributions have a distribution function whose name is â€œpâ€ prefixed to the distribution name; thus, `pbinom` is the distribution function for the binomial distribution.
+
+Suppose we have a binomial random variable *X* over 10 trials, where each trial has a success probability of 1/2. Then we can calculate the probability of observing *x* = 7 by calling `dbinom`:
+
+```         
+dbinom(7, size = 10, prob = 0.5)
+#> [1] 0.117
+```
+
+That calculates a probability of about 0.117. R calls `dbinom` the *density function*. Some textbooks call it the *probability mass function* or the *probability function*. Calling it a density function keeps the terminology consistent between discrete and continuous distributions.
+
+The cumulative probability, *P*(*X* â‰¤ *x*), is given by the *distribution function*, which is sometimes called the *cumulative probability function*. The distribution function for the binomial distribution is `pbinom`. Here is the cumulative probability for *x* = 7 (i.e., *P*(*X* â‰¤ 7)):
+
+```         
+pbinom(7, size = 10, prob = 0.5)
+#> [1] 0.945
+```
+
+It appears the probability of observing *X* â‰¤ 7 is about 0.945.
+
+The density functions and distribution functions for some common discrete distributions are shown in Table 4.
+
+**Table 4: Discrete distributions**
+
+| **Distribution** | **Density function: *P*(*X* = *x*)** | **Distribution function: *P*(*X* â‰¤ *x*)** |
+|------------------|--------------------------------------|---------------------------------------------|
+| Binomial         | `dbinom(x, size, prob)`              | `pbinom(x, size, prob)`                     |
+| Geometric        | `dgeom(x, prob)`                     | `pgeom(x, prob)`                            |
+| Poisson          | `dpois(x, lambda)`                   | `ppois(x, lambda)`                          |
+
+The complement of the cumulative probability is the *survival function*, *P*(*X* \> *x*). All of the distribution functions let you find this right-tail probability simply by specifying `lower.tail=FALSE`:
+
+```         
+pbinom(7, size = 10, prob = 0.5, lower.tail = FALSE)
+#> [1] 0.0547
+```
+
+Thus we see that the probability of observing *X* \> 7 is about 0.055.
+
+The *interval probability*, *P*(*x*~1~ \< *X* â‰¤ *x*~2~), is the probability of observing *X* between the limits *x*~1~ and *x*~2~. It is calculated as the difference between two cumulative probabilities: *P*(*X* â‰¤ *x*~2~) â€“ *P*(*X* â‰¤ *x*~1~). Here is *P*(3 \< *X* â‰¤ 7) for our binomial variable:
+
+```         
+pbinom(7, size = 10, prob = 0.5) - pbinom(3, size = 10, prob = 0.5)
+#> [1] 0.773
+```
+
+R lets you specify multiple values of *x* for these functions and will return a vector of the corresponding probabilities. Here we calculate two cumulative probabilities, *P*(*X* â‰¤ 3) and *P*(*X* â‰¤ 7), in one call to `pbinom`:
+
+```         
+pbinom(c(3, 7), size = 10, prob = 0.5)
+#> [1] 0.172 0.945
+```
+
+This leads to a one-liner for calculating interval probabilities. The `diff` function calculates the difference between successive elements of a vector. We apply it to the output of `pbinom` to obtain the difference in cumulative probabilitiesâ€”in other words, the interval probability:
+
+```         
+diff(pbinom(c(3, 7), size = 10, prob = 0.5))
+#> [1] 0.773
+```
+
+## Probabilities for Continuous Distributions
+
+Use the distribution function, which calculates *P*(*X* â‰¤ *x*). All built-in probability distributions have a distribution function whose name is â€œpâ€ prefixed to the distributionâ€™s abbreviated nameâ€”for instance, `pnorm` for the normal distribution.
+
+Example: whatâ€™s the probability of a draw being below .8 for a draw from a random standard normal distribution?
+
+```         
+pnorm(q = .8, mean = 0, sd = 1)
+#> [1] 0.788
+```
+
+Remeber that the continuous variables have no â€œprobabilityâ€ at a single point, *P*(*X* = *x*). Table 5 gives the distribution functions for several continuous distributions.
+
+**Table 5: Continuous distributions**
+
+| **Distribution**    | **Distribution function: *P*(*X* â‰¤ *x*)** |
+|---------------------|---------------------------------------------|
+| Normal              | `pnorm(x, mean, sd)`                        |
+| Studentâ€™s *t*     | `pt(x, df)`                                 |
+| Exponential         | `pexp(x, rate)`                             |
+| Gamma               | `pgamma(x, shape, rate)`                    |
+| Chi-squared (Ï‡^2^) | `pchisq(x, df)`                             |
+
+We can use `pnorm` to calculate the probability that a man is shorter than 66 inches, assuming that menâ€™s heights are normally distributed with a mean of 70 inches and a standard deviation of 3 inches. Mathematically speaking, we want *P*(*X* â‰¤ 66) given that *X* \~ *N*(70, 3):
+
+```         
+pnorm(66, mean = 70, sd = 3)
+#> [1] 0.0912
+```
+
+Likewise, we can use `pexp` to calculate the probability that an exponential variable with a mean of 40 could be less than 20:
+
+```         
+pexp(20, rate = 1/40)
+#> [1] 0.393
+```
+
+Just as for discrete probabilities, the functions for continuous probabilities use `lower.tail=FALSE` to specify the survival function, *P*(*X* \> *x*). This call to `pexp` gives the probability that the same exponential variable could be greater than 50:
+
+```         
+pexp(50, rate = 1/40, lower.tail = FALSE)
+#> [1] 0.287
+```
+
+Also like discrete probabilities, the interval probability for a continuous variable, *P*(*x*~1~ \< *X* \< *x*~2~), is computed as the difference between two cumulative probabilities, *P*(*X* \< *x*~2~) â€“ *P*(*X* \< *x*~1~). For the same exponential variable, here is *P*(20 \< *X* \< 50), the probability that it could fall between 20 and 50:
+
+```         
+pexp(50, rate = 1/40) - pexp(20, rate = 1/40)
+#> [1] 0.32
+```
+
+## Converting Probabilities to Quantiles
+
+Given a probability *p* and a distribution, you want to determine the corresponding quantile for *p*: the value *x* such that *P*(*X* â‰¤ *x*) = *p*.
+
+Every built-in distribution includes a quantile function that converts probabilities to quantiles. The functionâ€™s name is â€œqâ€ prefixed to the distribution name; thus, for instance, `qnorm` is the quantile function for the normal distribution.
+
+The first argument of the quantile function is the probability. The remaining arguments are the distributionâ€™s parameters, such as `mean`, `shape`, or `rate`:
+
+```         
+qnorm(0.05, mean = 100, sd = 15)
+#> [1] 75.3
+```
+
+A common example of computing quantiles is when we compute the limits of a confidence interval. If we want to know the 95% confidence interval (*Î±* = 0.05) of a standard normal variable, then we need the quantiles with probabilities of *Î±*/2 = 0.025 and (1 â€“ *Î±*)/2 = 0.975:
+
+```         
+qnorm(0.025)
+#> [1] -1.96
+qnorm(0.975)
+#> [1] 1.96
+```
+
+In the true spirit of R, the first argument of the quantile functions can be a vector of probabilities, in which case we get a vector of quantiles. We can simplify this example into a one-liner:
+
+```         
+qnorm(c(0.025, 0.975))
+#> [1] -1.96  1.96
+```
+
+All the built-in probability distributions provide a quantile function. Table 6 shows the quantile functions for some common discrete distributions. Table 7 shows the quantile functions for common continuous distributions.
+
+**Table 6: Discrete quantile distributions**
+
+| **Distribution** | **Quantile function**   |
+|------------------|-------------------------|
+| Binomial         | `qbinom(p, size, prob)` |
+| Geometric        | `qgeom(p, prob)`        |
+| Poisson          | `qpois(p, lambda)`      |
+
+**Table 7: Continuous quantile distributions**
+
+| **Distribution**    | **Quantile function**                                 |
+|---------------------|-------------------------------------------------------|
+| Normal              | `qnorm(p, mean, sd)`                                  |
+| Studentâ€™s *t*     | `qt(p, df)`                                           |
+| Exponential         | `qexp(p, rate)`                                       |
+| Gamma               | `qgamma(p, shape, rate)` or `qgamma(p, shape, scale)` |
+| Chi-squared (Ï‡^2^) | `qchisq(p, df)`                                       |
+
+## Simple Bootstrap
+
+Itâ€™s easy to implement a simple bootstrap using sampling with replacement. Suppose we have a vector, `x`, of 1,000 random numbers, drawn from a normal distribution with mean 4 and standard deviation 10.
+
+```{r Simple bootstrap, warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=80)}
+
+set.seed(321)
+x <- rnorm(1000, 4, 10)
+
+# Sample from x 1,000 times and calculate the median of each sample
+
+medians <- numeric(1000)   # empty vector of 100 numbers
+for (i in 1:1000) {
+  medians[i] <- median(sample(x, replace = TRUE))
+}
+
+# Estimate the confidence interval for the median from the bootstrap estimates
+ci <- quantile(medians, c(0.025, 0.975))
+
+# Report the output
+cat("95% confidence interval is (", ci, ")\n")
+
+```
+
+We know that `x` was created from a normal distribution with a mean of 4 and, hence, the sample median should be 4 also. (In a symmetrical distribution like the normal, the mean and the median are the same.) Our confidence interval easily contains the value.
+
+End-of-File\
+Pongsun B.\
+2024-09-19
